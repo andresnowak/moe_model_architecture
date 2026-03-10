@@ -2,7 +2,9 @@
 
 Documentations for baseline MoE model experiments.
 
+## Index
 
+[TOC]
 
 ## 09/03 Baseline MoE Model Experiments
 
@@ -111,8 +113,6 @@ Documentations for baseline MoE model experiments.
         ```
     
 - **Sbatch Script**: `/users/gfu/frameworks/Megatron-LM-sai/myscripts/apertus_qwen_30b_a3b_baseline.sh`
-
-##### 
 
 ## 03/03 Draft model experiment
 

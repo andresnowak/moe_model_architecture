@@ -1,27 +1,64 @@
 # Baseline MoE Model Experiments
 
+Documentations for baseline MoE model experiments.
+
+
+
+## 09/03 Baseline MoE Model Experiments
+
+#### Exp1
+
 > - **Megatron commit**: [https://github.com/swiss-ai/Megatron-LM/tree/merge-260109](https://github.com/swiss-ai/Megatron-LM/tree/merge-260109)
-> - **Datasets**: `/iopsstor/scratch/cscs/anowak/datasets/megatron/llama_tokenized/fineweb-edu-100B/fineweb-edu-100B_00002_tokens`
+> - **Model:** qwen3_30b_a3b, first 3 layers as dense layer
 > - **Dataset:** `/iopsstor/scratch/cscs/gfu/datasets/climbmix/hftokenized`
 >
 > - **Image**: `/iopsstor/scratch/cscs/gfu/ce-images/megatron_deepep-aarch64.sqsh`
+> - **Parallel Strategy**: DP4EP4PP2TP1, 8GPUs
+> - **Training Config**: GBS96, MBS2, GA12
 
+- **Trial:** https://wandb.ai/fuguan323-ethz/apertus_qwen_30b_a3b_climbmix?nw=nwuserfuguan323
 
+- **Problem**: stops at iter 999 due to misconfiguration of `--eval-interval` and `--data-split`
+  - disable evaluation for current experiments
+
+#### Exp2 Cont'd
+
+> - Same config as Exp1, **loading checkpoints ar iter 500.**
+>
+> - add `--no-load-optim` as **optimizer state loading fails**. No idea why.
+> - disable evaluation iter
+
+- **Trial**: https://wandb.ai/fuguan323-ethz/apertus_qwen_30b_a3b_climbmix/runs/lor75f4n?nw=nwuserfuguan323
+
+- **Consumed token**: ~2B
+
+- **Checkpoints**: `/iopsstor/scratch/cscs/gfu/megatron-runs/apertus_qwen_30b_a3b_climbmix/apertus_qwen_30b_a3b-climbmix-2n-4096sl-96gbsz-2mbsz-1tp-2pp-4ep-1etp-1cp-gqa_deepepa2a/checkpoints`
+
+- **Note**: there is a spike at 4.6k iter.
+
+  <img src="./figs/exp2loss.png" alt="exploss2" style="zoom:50%;" />
 
 ## 07/03 Baseline MoE Model Experiments OOM
 
-- https://wandb.ai/fuguan323-ethz/apertus_qwen_30b_a3b_nemotron
+> - **Megatron commit**: [https://github.com/swiss-ai/Megatron-LM/tree/merge-260109](https://github.com/swiss-ai/Megatron-LM/tree/merge-260109)
+> - **Model:** qwen3_30b_a3b, first 3 layers as dense layer
+> - **Dataset:** `/iopsstor/scratch/cscs/gfu/datasets/climbmix/hftokenized`
+>
+> - **Image**: `/iopsstor/scratch/cscs/gfu/ce-images/megatron_deepep-aarch64.sqsh`
+> - **Parallel Strategy**: DP2EP2PP4TP1, 8GPUs
+> - **Training Config**: GBS96, MBS4, GA12
 
-  **Problem:** OOM after ~55 steps, reproducible
+- **Trail**: https://wandb.ai/fuguan323-ethz/apertus_qwen_30b_a3b_nemotron
 
-  **Parallel Strategy**: DP2EP2PP4TP1, 8GPUs
+- **Problem:** OOM after ~55 steps, reproducible
 
   - High memory pressure for gpu2 and gpu3
-  - Could be the results of ***load imbalance*** in MoE layer
 
-  ![baseline_mem_usage](./figs/baseline_mem_usage.png)
+  - ***Could be the results of load imbalance in MoE layer***
 
-## 05/03 Reference Baseline MoE Model experiment
+<img src="./figs/baseline_mem_usage.png" alt="baseline_mem" style="zoom:50%;" />
+
+## 05/03 Reference Baseline MoE Model
 
 ### Model
 

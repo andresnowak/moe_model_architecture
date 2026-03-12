@@ -2,6 +2,22 @@
 
 Documentations for baseline MoE model experiments.
 
+## 12/03 Ckpt loading failure in Megatron
+
+> - **Megatron**: https://github.com/NVIDIA/Megatron-LM/tree/core_v0.16.0, [https://github.com/swiss-ai/Megatron-LM/tree/merge-260109](https://github.com/swiss-ai/Megatron-LM/tree/merge-260109)
+> - **Problems:** 
+>   There are 2 problems
+>   1. When `--precision-aware-optimizer` is enabled, this version of Megatron will save Optimizer States with an additional bool field `padding`. However in`megatron/core/optimizer/distrib_optimizer.py`, the function `_set_main_param_and_optimizer_states` expects `tensors` to contains only 3 fields. But what the saved tensor has an extra field called `padding` which is a bool type, and it causes error in when calling `set_scaled_state` because `padding` is not a tensor.
+>   2. When loading optimizer states from checkpoints, the memory cost is unexpectedly large and could cause OOM.
+>
+> - **Solutions:**
+>   1. Either use `dev` branch in Megatron, or skip `padding` field manually in `_set_main_param_and_optimizer_states`
+>   2. For OOM: https://github.com/NVIDIA/Megatron-LM/pull/3558
+
+After fix, the checkpoint loading works without OOM. And the memory trace is normal:
+
+<img src="./figs/baseline0312oom.png" alt="exploss2" style="zoom:50%;" />
+
 ## 11/03 Baseline MoE Model Experiments cont'd
 
 > Due to the problem encountered with swiss-ai codebase:

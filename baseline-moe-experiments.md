@@ -1,6 +1,12 @@
 # Baseline MoE Model Experiments
 
-Documentations for baseline MoE model experiments.
+Documentations for first step baseline MoE model experiments.
+
+**===========================**
+
+**DEPRECATED**
+
+**===========================**
 
 ## 13/03 Qwen-30B-A3B baseline MoE model
 

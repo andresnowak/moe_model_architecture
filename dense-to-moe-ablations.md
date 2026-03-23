@@ -16,20 +16,17 @@ The baseline MoE experiments with Qwen3-30B-A3B is kind of in a mess due to all 
 ## Theoratical
 
 1. Define MoE vs Dense in terms of FLOPs
-
 2. MoE consumes less computation while maintains a larger model size
-
 3. Given a 8B dense model size, when will a MoE model surpass it?
-
    - Fixed compute budget $C$: 
 
-     $\begin{align*}
-     & M = 6\Phi_{comp}\\
-     & C = M\cdot D
-     \end{align*}$
+$\begin{align*}
+& M = 6\Phi_{comp}\\
+& C = M\cdot D
+\end{align*}$
 
-     where $\Phi_{comp}$ is the parameter size that involved in computation, $M$ is the computational cost per token and $D$ is the number of tokens. 
+where $\Phi_{comp}$ is the parameter size that involved in computation, $M$ is the computational cost per token and $D$ is the number of tokens. 
 
-   - Fixed wall time $T$: 
+- Fixed wall time $T$: 
 
-     currently the moe training is slow。
+  currently the moe training is slow。

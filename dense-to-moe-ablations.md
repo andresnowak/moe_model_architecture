@@ -52,3 +52,56 @@ The baseline MoE experiments with Qwen3-30B-A3B is kind of in a mess due to all 
 
      - $C_{dense}= 6\cdot 8e9\cdot t_{dense} \cdot 12h$ = $2\cdot 10^{20}$ FLOPs, $C_{moe} = 6\cdot 3e9 \cdot t_{moe} \cdot 12h$ = $10^{20}$ FLOPs
      - $D_{dense} = 4.2B$, $D_{moe} = 5.6B$
+
+## Dense to MoE experiments
+
+Prior work declares that: *an MoE model with a 3.1% activation ratio and an expert granularity of 12 will achieve over 7x computational efficiency under a 1e22 FLOPs compute budget*. 
+
+#### Setup
+
+- **Dense model**: 
+  - Apertus-8B with SwiGLU and Adam ([link](https://github.com/swiss-ai/pretrain-code/blob/main/pretraining/submit_apertus_8b.sh))
+  - 16 nodes, GBS2048, TP2, LR1.1e-4
+
+- **MoE model**: 
+
+  ```
+  --num-layers 20
+  --hidden-size 2048
+  --ffn-hidden-size 5120
+  --moe-ffn-hidden-size 512
+  --moe-shared-expert-intermediate-size 512
+  --num-experts 256
+  --moe-router-topk 12
+  --ep 4
+  --mbs 2
+  --seql 4096
+  ```
+
+  - 16B-1.6B with SwiGLU and Adam, Non-embd Activated parameter = 1.07B
+  - $A = \frac{12 + 1}{256} = 5.1\%$, $G = \frac{2\cdot 2048}{512} = 8$
+  - 16 nodes, GBS1024, EP4, LR3.3e-4
+
+- **Compute Budget**
+
+  - $\frac{M_{dense}}{M_{moe}} = 5$, it is less than the declaration but should be good for verification
+  - If we fix $C = 10^{21}$FLOPs: 
+    - $D_{dense} = 21B$, $D_{moe} = 104B$
+    - $T_{dense} = \frac{21B}{99260} = 58h$, $T_{moe} = \frac{104B}{300800}=96h$
+  - If we fix $T = 12h$
+    - $C_{dense} $ = $2\cdot 10^{20}$ FLOPs, $C_{moe} = 6\cdot 1.6e9 \cdot 300800 \cdot 12h$ = $1.2\cdot 10^{20}$ FLOPs
+    - $D_{dense} = 4.2B$, $D_{moe} = 12.5B$
+
+- **What to expect?**
+
+  Given the current settings, we want to see: 
+
+  - Will MoE model's loss surpass Dense model?
+  - If so, can this MoE model do better in loss?
+  - Otherwise, how to modify the MoE model?
+
+#### Experiments
+
+- After the first 12h:
+
+<img src="./figs/dtom_loss1.png" alt="exploss2" style="zoom:50%;" />

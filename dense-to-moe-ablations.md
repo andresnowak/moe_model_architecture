@@ -161,14 +161,32 @@ Then:
   --seql 4096
   ```
 
-#### Exp Results
+#### Exp 29/03/2026
 
-1. **Dense-16B vs. MoE-80B-A6B**
+1. **Dense-16B vs. MoE-80B-A6B**, 
 
-   - **Token Throughput**: $t_{dense16b}=4200\rm{token/sec/gpu}$, $t_{moe80ba6b}=5400\rm{token/sec/gpu}$
-     - Does not exactly match
+   - **GBS2048, LR1.1e-4**
 
-   - 
+   - **Token Throughput**: $t_{dense16b}=4200\rm{token/sec/gpu}$, $t_{moe80ba6b}=5200\rm{token/sec/gpu}$
+
+   <img src="./figs/dtom_loss0329.png" alt="exploss2" style="zoom:50%;" />
+
+
+
+
+
+#### Exp 30/03/202
+
+1. **Dense-16B, Dense-8B, MoE-16B-A1.6B, MoE-80B-A6B**
+   - **GBS1024, LR3.7e-4**
+   - All models present simialr loss trend and are spiky. Could be the results of large LR.
+
+​	<img src="./figs/dtom_loss0330.png" alt="exploss2" style="zoom:50%;" />
+
+2. **Dense-16B, Dense-8B, MoE-16B-A1.6B, MoE-80B-A6B**
+   - **GBS1024, LR1.1e-4**
+
+
 
 
 

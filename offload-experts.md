@@ -16,6 +16,7 @@ We define the following symbols for MoE model:
 | $h_e$  | Intermediate size of expert                |
 | $L$    | Hidden layers                              |
 | $C$    | Chunk size (number of experts) for loading |
+| $M$    | Number of tokens assigned to each expert   |
 
 And the following for parallel strategy:
 
@@ -39,11 +40,11 @@ This part of analysis should provide guidance on parallel strategy and MoE model
 
 <img src="./figs/offloading/pipeline.png" alt="exploss2" style="zoom:50%;" />
 
-Let $C$ be the chunk size that indicates number of experts to load at a time and $M$ be the number of tokens received by each expert.
+Let $C$ be the chunk size that indicates number of experts to load at a time and $M$ be the number of tokens received by each expert. We take Down-projection in Expert Layer as example:
 
-- $T_{load} = \frac{C \cdot H\cdot 2h_e \cdot 2Byte}{450GB/s}$, $T_{gemm} = \frac{C \cdot 2 \cdot M \cdot H\cdot 2h_e}{\rm{TFLOP/s}}$
+- $T_{load} = \frac{C \cdot (H\cdot 2h_e) \cdot 2Byte}{450GB/s}$, $T_{gemm} = \frac{C \cdot 2 \cdot M \cdot H\cdot 2h_e}{\rm{989TFLOP/s}}$
 
-- $\rm{Overlap Efficiency =}\frac{T_{gemm}}{T_{load}}$
+- $\rm{Overlap Efficiency =}\frac{T_{gemm}}{T_{load}} = M \cdot\frac{450}{989e3}$
 
 To get **perfect overlap efficiency of 100%:**
 
@@ -67,12 +68,14 @@ To get **perfect overlap efficiency of 100%:**
   Overlap efficiency: FC1=101.39% | FC2=114.83%
   ``````
 
+​	It verifies that with $M=1465$ we can achieve 100% overlap.
+
 We need to get **$M$ <u>at least larger than 1000 tokens</u>**. Larger $M$ means better overlapping efficiency. We define $M$ in a balanced scenario as:
 
-- $k = \frac{DP}{EDP} = \frac{EP}{TP}$, $R_a = \frac{N_a}{N_e}$
-- $M = \frac{mbs\cdot seq \cdot N_a}{N_e} \cdot \frac{DP}{EDP} = mbs\cdot seq \cdot \frac{EP}{TP}\cdot R_a$ 
+- $k = \frac{DP}{EDP} = \frac{EP}{TP}$
+- $M = \frac{mbs\cdot seq \cdot N_a}{N_e} \cdot \frac{DP}{EDP} = mbs\cdot seq \cdot \frac{EP}{TP}\cdot \frac{N_a}{N_e}$ 
 
-We assume $mbs=2$ and $seq=4096$, this makes the balance token number only relate to EP, TP and activated ratio. 
+We assume $mbs=2$ and $seq=4096$, this makes the balance token number **only relate to EP, TP and activated ratio**. 
 
 - If TP=EP=4, $M = 8192 \cdot R_a \Rightarrow R_a \geq 12$%
 
@@ -109,7 +112,9 @@ The majority of changes happened in Megatron to support expert weight offloading
 **TODOs:**
 
 - [x] Support expert weight offloading e2e training (@fuguan)
-- [ ] Support checkpoint saving/loading with cpu expert weights in `OffloadingExpertsMLP` (@fuguan)
+- [ ] Support checkpoint saving/loading with `torch_dist` with cpu expert weights (@fuguan)
+  1. fully_parallel_save
+  2. async_save
 - [ ] Support `delay-wgrad-compute` in `OffloadingExpertsMLP` (@fuguan)
 - [ ] Support `grad-all-reduce-overlap` and `param-all-gather-overlap `
 - [ ] Support Muon with offloading expert (should have supported)

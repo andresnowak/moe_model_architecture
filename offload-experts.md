@@ -24,7 +24,7 @@ And the following for parallel strategy:
 - DP = $N_{gpu}$ / (TP * PP)
 - EDP = $N_{gpu}$ / (EP * PP)
 
-#### GPU RAM Analysis for MoE Layer (TBD)
+#### GPU RAM Analysis for MoE Layer
 
 This part of analysis should provide guidance on the model size we are going to have. 
 
@@ -75,7 +75,7 @@ We need to get **$M$ <u>at least larger than 1000 tokens</u>**. Larger $M$ means
 - $k = \frac{DP}{EDP} = \frac{EP}{TP}$
 - $M = \frac{mbs\cdot seq \cdot N_a}{N_e} \cdot \frac{DP}{EDP} = mbs\cdot seq \cdot \frac{EP}{TP}\cdot \frac{N_a}{N_e}$ 
 
-We assume $mbs=2$ and $seq=4096$, this makes the balance token number **only relate to EP, TP and activated ratio**. 
+We assume $mbs=2$ and $seq=4096$, this makes the balance token number **only relate to EP, TP and activated ratio**. If we need M >= 1000:
 
 - If TP=EP=4, $M = 8192 \cdot R_a \Rightarrow R_a \geq 12$%
 
@@ -98,7 +98,7 @@ We keep main gradient on the GPU RAM to avoid frequent H2D and D2H transfer duri
 > - Megatron: https://github.com/FFGGSSJJ/Megatron-LM/tree/moe_arch/dev
 > - groupgemm: https://github.com/FFGGSSJJ/grouped_gemm/tree/dev/grad_acc_fuse
 
-The majority of changes happened in Megatron to support expert weight offloading in a non-aggressive way. To enable better control of computation and support low-overhead batched h2d copy, a separate groupgemm repo is used.
+The majority of changes happened in Megatron to support expert weight offloading in a non-aggressive way. To enable better control of computation and support low-overhead batched h2d copy, a separate groupgemm repo is used. The general approach is:
 
 - Design Expert Layer autograd function
   - Loading-Computation Pipieline
@@ -112,18 +112,38 @@ The majority of changes happened in Megatron to support expert weight offloading
 **TODOs:**
 
 - [x] Support expert weight offloading e2e training (@fuguan)
+
 - [ ] Support checkpoint saving/loading with `torch_dist` with cpu expert weights (@fuguan)
-  1. fully_parallel_save
-     1. Saving seems to be fine, no data communication needed. Parameter data that does not need to be saved by current rank will be simply discarded. 
-  2. **async_save**
-     1. async_save might cause data race: param -> copy to cpu tensor -> async save -> training. If param is already cpu tensor, the copy will not happen. The param data could be polluted by training.
-  3. fully_parallel_load
-     1. fully_parallel_load needs data broadcast between different ranks.
-        - Each DP rank holds a shard of ckpt data -> load local sharded ckpt into parameter storage -> exchange in dp group through NCCL -> copy into parameter weight.
-        - ~~exchange in dp group through NCCL could be problematic~~. After loading local shard, the exchange process will do the H2D transfer for NCCL communication. Need to check peak GPU memory consumption, but should be okay.
+
+  - [x] `fully_parallel_save`
+    1. Saving seems to be fine, no data communication needed. Parameter data that does not need to be saved by current rank will be simply discarded. 
+
+  - [ ] **`async_save`**
+    1. async_save might cause data race: param -> copy to cpu tensor -> async save -> training. If param is already cpu tensor, the copy will not happen. The param data could be polluted by training. 
+       - **<u>Solution</u>**: allocate a new CPU tensor and copy param data into it.
+
+  - [x] `fully_parallel_load`
+    1. fully_parallel_load needs data broadcast between different ranks.
+       - Each DP rank holds a shard of ckpt data -> load local sharded ckpt into parameter storage -> exchange in dp group through NCCL -> copy into parameter weight.
+       - ~~exchange in dp group through NCCL could be problematic~~. After loading local shard, the exchange process will do the H2D transfer for NCCL communication. Need to check peak GPU memory consumption, but should be okay.
+
+- [x] Support activation recomputation and fp8 activation storage (@fuguan)
+
+- [x] Support `grad-reduce-overlap` and `param-gather-overlap ` (@fuguan)
+
+  - [x] `grad-reduce-overlap`
+    - post_backward_hook has to be handled manually. Otherwise it cannot be triggered normally with CPU parameters, and causes hanging in backward. The reason for why the hook cannot be triggered correctly is unknown.
+  - [x] `param-gather-overlap`
+    - nothing need to be changed. For now it is synchronous all-gather that will not overlap with forward.
+    - **<u>To optimize</u>**: launch asynchronous all-gathe in start_param_sync, and launch H2D copy in finish_param_sync
+
+- [x] Verify functionality with VPP (@fuguan)
+
 - [ ] Support `delay-wgrad-compute` in `OffloadingExpertsMLP` (@fuguan)
-- [ ] Support activation recomputation and fp8 activation storage (@fuguan)
-- [ ] Support `grad-all-reduce-overlap` and `param-all-gather-overlap `
+
+  - [ ] `delay-wgrad-compute`
+    - Support should be straightforward. Will be done when we need it.
+
 - [ ] Support Muon with offloading expert (should have supported)
 
 ### Step2: Master Weight Offloading (TBD)

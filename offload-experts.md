@@ -160,7 +160,9 @@ There will be mainly 2 part of verification: correctness and performance.
 
 ### Correctness Verification
 
-On going.
+We use MoE-7B-A1.5B to verify the correctness. 
+
+- Within 15B tokens, the LM loss does not deviate from baseline.
 
 ### Performance Verification
 
@@ -172,10 +174,6 @@ As we have built previously, the overlapping efficiency is mainly related to the
 - The purpose of this model is to saturate GPU RAM with TP4-EP4 + Expert Offloading on 32 GPUs. 
   - Overlap Efficiency ~= 40%
 - We expect that **EP4 + Expert Offloading to outperform EP8.**
-
-- Nsys Profile
-
-<img src="./figs/offloading/offloading-pipeline-0422-01.png" alt="exploss2" style="zoom:50%;" />
 
 - **Results**:
 
@@ -199,3 +197,7 @@ As we have built previously, the overlapping efficiency is mainly related to the
 - Red for EP4-TP2 + Offloading
 
 <img src="./figs/offloading/moe-27b-a3b.png" alt="exploss2" style="zoom:50%;" />
+
+- Nsys Profile
+
+  <img src="./figs/offloading/offloading-pipeline-0422-01.png" alt="exploss2" style="zoom:50%;" />
